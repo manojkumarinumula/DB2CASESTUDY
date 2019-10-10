@@ -1,0 +1,587 @@
+      ***************************************************************   00010040
+      ********THIS IS A PROGRAM TO PROCESS LOAN PROCESSING**********    00020040
+      ***********************OF A BANK*******************************   00030040
+                                                                        00040040
+       ID DIVISION.                                                     00050040
+       PROGRAM-ID. CSTDY71.                                             00060040
+       AUTHOR. TEAM_7.                                                  00070040
+       DATE-WRITTEN. 06-10-2019.                                        00080040
+       ENVIRONMENT DIVISION.                                            00090040
+       INPUT-OUTPUT SECTION.                                            00100040
+       FILE-CONTROL.                                                    00110040
+      **************INPUT FILE INFORMATION***************************** 00120040
+              SELECT INFILE ASSIGN TO DD1                               00130040
+              FILE STATUS IS WS-FS.                                     00140040
+      **************OUTPUT FILE INFORMATION*****************************00150040
+              SELECT OUTFILE ASSIGN TO DD2                              00160040
+              FILE STATUS IS WS-FS1.                                    00170040
+       DATA DIVISION.                                                   00180040
+       FILE SECTION.                                                    00190040
+      **************FILE DESCRIPTION FOR INPUT FILE*********************00200040
+       FD INFILE.                                                       00210040
+       01 INREC1.                                                       00220040
+          05 TYPE1           PIC       9(2).                            00230040
+             88 OP                               VALUE   01.            00240040
+          05 CID             PIC       X(5).                            00250040
+          05 NAME            PIC       X(10).                           00260040
+          05 ADDR            PIC       X(20).                           00270040
+          05                 PIC       X(43).                           00280040
+       01 INREC2.                                                       00290040
+          05 TYPE1           PIC       9(2).                            00300040
+             88 OP                               VALUE   02.            00310040
+          05 CID             PIC       X(5).                            00320040
+          05 ADDR            PIC       X(20).                           00330040
+          05                 PIC       X(53).                           00340040
+       01 INREC3.                                                       00350040
+          05 TYPE1           PIC       9(2).                            00360040
+             88 OP                               VALUE   03.            00370040
+          05 CID             PIC       X(5).                            00380040
+          05                 PIC       X(73).                           00390040
+       01 INREC4.                                                       00400040
+          05 TYPE1           PIC       9(2).                            00410040
+             88 OP                               VALUE   04.            00420040
+          05 CID             PIC       X(5).                            00430040
+          05 LOANTYPE        PIC       X(2).                            00440040
+          05 LOANAMT         PIC       9(7).                            00450040
+          05                 PIC       X(64).                           00460040
+       01 INREC5.                                                       00470040
+          05 TYPE1           PIC       9(2).                            00480040
+             88 OP                               VALUE   05.            00490040
+          05 CID             PIC       X(5).                            00500040
+          05 LOANTYPE        PIC       X(2).                            00510040
+          05 LID             PIC       X(5).                            00520040
+          05 LOANAMT         PIC       9(7).                            00530040
+          05                 PIC       X(59).                           00540040
+      **************FILE DESCRIPTION FOR OUTPUT FILE********************00550040
+       FD OUTFILE.                                                      00560040
+       01 OUTREC1.                                                      00570040
+          05 CID             PIC       X(5).                            00580040
+          05 NAME            PIC       X(10).                           00590040
+          05 ADDR            PIC       X(20).                           00600040
+          05 REMARK          PIC       X(45).                           00610040
+       01 OUTREC2.                                                      00620040
+          05 CID             PIC       X(5).                            00630040
+          05 ADDR            PIC       X(20).                           00640040
+          05 REMARK          PIC       X(55).                           00650040
+       01 OUTREC3.                                                      00660040
+          05 CID             PIC       X(5).                            00670040
+          05 REMARK          PIC       X(75).                           00680040
+       01 OUTREC4.                                                      00690040
+          05 CID             PIC       X(5).                            00700040
+          05 LOANTYPE        PIC       X(2).                            00710040
+          05 LOANAMT         PIC       9(7).                            00720040
+          05 REMARK          PIC       X(66).                           00730040
+       01 OUTREC5.                                                      00740040
+          05 CID             PIC       X(5).                            00750040
+          05 LOANTYPE        PIC       X(2).                            00760040
+          05 LID             PIC       X(5).                            00770040
+          05 LOANAMT         PIC       X(7).                            00780040
+          05 REMARK          PIC       X(61).                           00790040
+       01 OUTREC6.                                                      00800040
+          05 REMARK          PIC       X(80).                           00810040
+      ******************************************************************00820040
+       WORKING-STORAGE SECTION.                                         00830040
+      ******************************************************************00840040
+               EXEC SQL                                                 00850040
+                 INCLUDE CUSTOMER                                       00860040
+               END-EXEC                                                 00870040
+      ******************************************************************00880040
+               EXEC SQL                                                 00890040
+                 INCLUDE LOAN3                                          00900040
+               END-EXEC                                                 00910040
+      ******************************************************************00920040
+               EXEC SQL                                                 00930040
+                 INCLUDE TRANS                                          00940040
+               END-EXEC                                                 00950040
+      ******************************************************************00960040
+               EXEC SQL                                                 00970040
+                 INCLUDE SQLCA                                          00980040
+               END-EXEC                                                 00990040
+      *******************WORKING STORAGE VARIABLES**********************01000040
+       77 WS-FS              PIC       99.                              01010040
+       77 WS-FS1             PIC       99.                              01020040
+       77 RATE               PIC       S99V99.                          01030040
+       77 CNTR               PIC       99        VALUE 0.               01040040
+       77 TERM               PIC       9.                               01050040
+       77 TEMP               PIC       9(6).                            01060040
+       77 TOTAL              PIC       9(6).                            01070040
+       77 CNTR1              PIC       9(7)      VALUE 0.               01080040
+       77 CNTR2              PIC       9(7)      VALUE 0.               01090040
+       77 CNT                PIC       9.                               01100040
+       77 WS-STR1            PIC       X(7).                            01110040
+       77 WS-STR2            PIC       X(7).                            01120040
+      ******************PROCEDURE DIVISION******************************01130040
+       PROCEDURE DIVISION.                                              01140040
+       MAIN-PARA.                                                       01150040
+             OPEN       INPUT       INFILE                              01160040
+             OPEN       OUTPUT      OUTFILE                             01170040
+             DISPLAY "OPEN STATUS" WS-FS                                01180040
+             DISPLAY "OPEN STATUS" WS-FS1                               01190040
+             PERFORM READ-PARA UNTIL WS-FS NOT = 0                      01200040
+             CLOSE                  INFILE                              01210040
+             CLOSE                  OUTFILE                             01220040
+             STOP RUN.                                                  01230040
+      ******************READING OF INPUT FILE***************************01240040
+       READ-PARA.                                                       01250040
+             READ INFILE                                                01260040
+             AT END                                                     01270040
+             DISPLAY "ALL RECORDS PROCCESSED"                           01280040
+             NOT AT END                                                 01290040
+             PERFORM CHECK-PARA                                         01300040
+             END-READ.                                                  01310040
+      ******************CHECK PARA FOR CHECKING THE TYPE OF OPERATION***01320040
+                                                                        01330040
+       CHECK-PARA.                                                      01340040
+            EVALUATE TRUE                                               01350040
+              WHEN TYPE1 OF INREC1 = 01                                 01360040
+               PERFORM ADD-PARA                                         01370040
+              WHEN TYPE1 OF INREC2 = 02                                 01380040
+               PERFORM UPD-PARA                                         01390040
+              WHEN TYPE1 OF INREC3 = 03                                 01400040
+               PERFORM DEL-PARA                                         01410040
+              WHEN TYPE1 OF INREC4 = 04                                 01420040
+               PERFORM NEW-PARA                                         01430040
+              WHEN TYPE1 OF INREC5 = 05                                 01440040
+               PERFORM REPAY-PARA                                       01450040
+              WHEN OTHER                                                01460040
+               PERFORM ERROR-PARA1                                      01470040
+            END-EVALUATE.                                               01480040
+      ******************ADDING A NEW CUSTOMER***************************01490040
+       ADD-PARA.                                                        01500040
+             IF CID OF INREC1 IS NOT = SPACES                           01510040
+                 IF NAME OF INREC1 IS NOT = SPACES                      01520040
+                    IF ADDR OF INREC1 IS NOT = SPACES                   01530040
+                    UNSTRING CID OF INREC1 DELIMITED BY ' ' INTO WS-STR101540040
+                    , WS-STR2 TALLYING IN CNT                           01550040
+                     IF CNT < 2                                         01560041
+                       PERFORM INSERT-PARA                              01570040
+                     ELSE                                               01580040
+                       MOVE "CID IS NOT VALID" TO REMARK OF OUTREC1     01590040
+                       PERFORM ERROR-PARA                               01600040
+                     END-IF                                             01610040
+                     ELSE                                               01620040
+                       MOVE "ADDRESS GIVEN NOT VALID"                   01630040
+                       TO REMARK OF OUTREC1                             01640040
+                       PERFORM ERROR-PARA                               01650040
+                     END-IF                                             01660040
+                 ELSE                                                   01670040
+                    MOVE "NAME GIVEN IS NOT VALID" TO REMARK OF OUTREC1 01680040
+                    PERFORM ERROR-PARA                                  01690040
+                 END-IF                                                 01700040
+             ELSE                                                       01710040
+                 MOVE "CID GIVEN IS NOT VALID" TO REMARK OF OUTREC1     01720040
+                 PERFORM ERROR-PARA                                     01730040
+             END-IF.                                                    01740040
+      ******************INSERTING A NEW CUSTOMER AFTER CHECKING ALL**** 01750040
+      *****************************THE VALIDATIONS********************* 01760040
+       INSERT-PARA.                                                     01770040
+             MOVE CID OF INREC1 TO HV1-CID                              01780040
+             EXEC SQL                                                   01790040
+                  SELECT CID INTO :HV1-CID                              01800040
+                  FROM CUSTOMER                                         01810040
+                  WHERE CID = :HV1-CID                                  01820040
+             END-EXEC                                                   01830040
+             IF SQLCODE NOT = 0                                         01840040
+               MOVE CID OF INREC1 TO HV1-CID                            01850040
+               MOVE NAME  OF INREC1 TO HV1-NAME                         01860040
+               MOVE ADDR OF INREC1 TO HV1-ADDR-TEXT                     01870040
+               MOVE LENGTH OF HV1-ADDR-TEXT TO HV1-ADDR-LEN             01880040
+                EXEC SQL                                                01890040
+                  INSERT INTO CUSTOMER (CID,NAME,ADDR)                  01900040
+                  VALUES (:HV1-CID,:HV1-NAME,:HV1-ADDR)                 01910040
+                END-EXEC                                                01920040
+                IF SQLCODE = 0                                          01930040
+                  DISPLAY "INSERT SUCCESS"                              01940040
+                ELSE                                                    01950040
+                  DISPLAY SQLCODE                                       01960040
+                END-IF                                                  01970040
+             ELSE                                                       01980040
+               MOVE "CUSTOMER IS ALREADY PRESENT" TO REMARK OF OUTREC1  01990040
+               PERFORM ERROR-PARA                                       02000040
+             END-IF.                                                    02010040
+      ******************ERROR PROCESSING PARA***************************02020040
+       ERROR-PARA.                                                      02030040
+             IF TYPE1 OF INREC1 = 01                                    02040040
+               MOVE CID OF  INREC1 TO CID OF OUTREC1                    02050040
+               MOVE NAME OF  INREC1 TO NAME OF OUTREC1                  02060040
+               MOVE ADDR OF  INREC1 TO ADDR OF OUTREC1                  02070040
+               WRITE OUTREC1                                            02080040
+             END-IF                                                     02090040
+             IF TYPE1 OF INREC2 = 02                                    02100040
+               MOVE CID OF INREC2 TO CID OF OUTREC2                     02110040
+               MOVE ADDR OF INREC2 TO ADDR OF OUTREC2                   02120040
+               WRITE OUTREC2                                            02130040
+             END-IF                                                     02140040
+             IF TYPE1 OF INREC3 = 03                                    02150040
+               MOVE CID OF  INREC3 TO CID OF OUTREC3                    02160040
+               WRITE OUTREC3                                            02170040
+             END-IF                                                     02180040
+             IF TYPE1 OF INREC4 = 04                                    02190040
+               MOVE CID OF INREC4 TO CID OF OUTREC4                     02200040
+               MOVE LOANTYPE OF INREC4 TO LOANTYPE OF OUTREC4           02210040
+               MOVE LOANAMT OF INREC4  TO LOANAMT OF OUTREC4            02220040
+               WRITE OUTREC4                                            02230040
+             END-IF                                                     02240040
+             IF TYPE1 OF INREC5 = 05                                    02250040
+               MOVE CID OF INREC5 TO CID OF OUTREC5                     02260040
+               MOVE LOANTYPE OF INREC5 TO LOANTYPE OF OUTREC5           02270040
+               MOVE LID OF INREC5  TO LID OF OUTREC5                    02280040
+               MOVE LOANAMT OF INREC5  TO LOANAMT OF OUTREC5            02290040
+               WRITE OUTREC5                                            02300040
+             END-IF.                                                    02310040
+      ******************************************************************02320040
+       ERROR-PARA1.                                                     02330040
+             MOVE "THE OPERATION IS INVALID" TO REMARK OF OUTREC6       02340040
+             WRITE OUTREC6.                                             02350040
+      ******************UPDATE OF CUSTOMER******************************02360040
+       UPD-PARA.                                                        02370040
+             IF CID OF INREC2 IS NOT = SPACES                           02380040
+                   IF ADDR OF INREC2 IS NOT = SPACES                    02390040
+                      PERFORM UPDATE-PARA                               02400040
+                   ELSE                                                 02410040
+                      MOVE "ADDR GIVEN NOT VALID" TO REMARK OF OUTREC2  02420040
+                      PERFORM ERROR-PARA                                02430040
+                   END-IF                                               02440040
+             ELSE                                                       02450040
+                MOVE "CID GIVEN IS NOT VALID" TO REMARK OF OUTREC2      02460040
+                PERFORM ERROR-PARA                                      02470040
+             END-IF.                                                    02480040
+      ********UPDATION OF ADDRESS AFTER CHECKING ALL VALIDATIONS********02490040
+       UPDATE-PARA.                                                     02500040
+             MOVE CID OF INREC2 TO HV1-CID                              02510040
+             EXEC SQL                                                   02520040
+                SELECT CID INTO :HV1-CID                                02530040
+                FROM CUSTOMER                                           02540040
+                WHERE CID = :HV1-CID                                    02550040
+             END-EXEC                                                   02560040
+             IF SQLCODE = 0                                             02570040
+                MOVE CID OF INREC2 TO HV1-CID                           02580040
+                MOVE ADDR OF INREC2 TO HV1-ADDR-TEXT                    02590040
+                MOVE LENGTH OF HV1-ADDR-TEXT TO HV1-ADDR-LEN            02600040
+                EXEC SQL                                                02610040
+                 UPDATE CUSTOMER                                        02620040
+                 SET ADDR = :HV1-ADDR                                   02630040
+                 WHERE CID = :HV1-CID                                   02640040
+                END-EXEC                                                02650040
+                IF SQLCODE = 0                                          02660040
+                  DISPLAY "UPDATE SUCCESS"                              02670040
+                ELSE                                                    02680040
+                  DISPLAY SQLCODE                                       02690040
+                END-IF                                                  02700040
+             ELSE                                                       02710040
+                MOVE "CUSTOMER IS NOT PRESENT" TO REMARK OF OUTREC2     02720040
+                PERFORM ERROR-PARA                                      02730040
+             END-IF.                                                    02740040
+      ******************DELETE-PARA*************************************02750040
+       DEL-PARA.                                                        02760040
+             IF CID OF INREC3 IS NOT = SPACES                           02770040
+                  PERFORM DELETE-PARA                                   02780040
+             ELSE                                                       02790040
+                  MOVE "CID GIVEN IS NOT VALID" TO REMARK OF OUTREC3    02800040
+                  PERFORM ERROR-PARA                                    02810040
+             END-IF.                                                    02820040
+      *******DELETION OF CUSTOMER AFTER CHECKING VALIDATIONS************02830040
+       DELETE-PARA.                                                     02840040
+             MOVE CID OF INREC3 TO HV1-CID                              02850040
+             EXEC SQL                                                   02860040
+                SELECT CID INTO :HV1-CID                                02870040
+                FROM CUSTOMER                                           02880040
+                WHERE CID = :HV1-CID                                    02890040
+             END-EXEC                                                   02900040
+             IF SQLCODE = 0                                             02910040
+                DISPLAY "CID VALID"                                     02920040
+                MOVE CID OF INREC3 TO HV3-CID                           02930040
+                MOVE 'C' TO HV3-STATUS                                  02940040
+                EXEC SQL                                                02950040
+                  SELECT CID INTO :HV3-CID                              02960040
+                  FROM LOAN_TRANS                                       02970040
+                  WHERE CID = :HV3-CID                                  02980040
+                END-EXEC                                                02990040
+                MOVE CID OF INREC3 TO HV3-CID                           03000040
+                EXEC SQL                                                03010040
+                  SELECT COUNT(CID) INTO :HV3-OUTAMT                    03020040
+                  FROM LOAN_TRANS                                       03030040
+                  WHERE CID = :HV3-CID                                  03040040
+                END-EXEC                                                03050040
+                IF SQLCODE = 0                                          03060040
+                   DISPLAY "CID IS PRESENT IN TRANS"                    03070040
+                   MOVE HV3-OUTAMT TO CNTR1                             03080040
+                ELSE                                                    03090040
+                   MOVE "CID NOT IN TRANS" TO REMARK OF OUTREC3         03100040
+                   PERFORM ERROR-PARA                                   03110040
+                END-IF                                                  03120040
+                MOVE CID OF INREC3 TO HV3-CID                           03130040
+                MOVE 'C' TO HV3-STATUS                                  03140040
+                EXEC SQL                                                03150040
+                  SELECT COUNT(STATUS) INTO :HV3-OUTAMT                 03160040
+                  FROM LOAN_TRANS                                       03170040
+                  WHERE CID = :HV3-CID AND STATUS = :HV3-STATUS         03180040
+                END-EXEC                                                03190040
+                MOVE HV3-OUTAMT TO CNTR2                                03200040
+                IF CNTR1 = CNTR2                                        03210040
+                  PERFORM DELETE2-PARA                                  03220040
+                ELSE                                                    03230040
+                  DISPLAY "CANT DO DELETE"                              03240040
+                  MOVE "CANT DELETE SINCE CUSTOMER HAVE OPEN LOANS"     03250040
+                        TO REMARK OF OUTREC3                            03260040
+                  PERFORM ERROR-PARA                                    03270040
+                END-IF                                                  03280040
+             ELSE                                                       03290040
+                  MOVE "CID NOT IN CUSTOMER" TO REMARK OF OUTREC3       03300040
+                  PERFORM ERROR-PARA                                    03310040
+             END-IF.                                                    03320040
+      *******************PERFORMING THE DELETE OPERATION****************03330040
+       DELETE2-PARA.                                                    03340040
+                MOVE CID OF INREC3 TO HV3-CID                           03350040
+                EXEC SQL                                                03360040
+                   DELETE LOAN_TRANS                                    03370040
+                   WHERE CID = :HV3-CID                                 03380040
+                END-EXEC                                                03390040
+                IF SQLCODE = 0                                          03400040
+                   DISPLAY "DELETED FROM TRANS TABLE"                   03410040
+                ELSE                                                    03420040
+                   DISPLAY "CANT DELETE FROM TRANS TABLE" SQLCA         03430040
+                END-IF                                                  03440040
+                MOVE CID OF INREC3 TO HV1-CID                           03450040
+                EXEC SQL                                                03460040
+                  DELETE CUSTOMER                                       03470040
+                  WHERE CID = :HV1-CID                                  03480040
+                END-EXEC                                                03490040
+                IF SQLCODE = 0                                          03500040
+                  DISPLAY "DELETE SUCCESS"                              03510040
+                ELSE                                                    03520040
+                  DISPLAY SQLCODE                                       03530040
+                END-IF.                                                 03540040
+      *********************ADDING A NEW LOAN PARA***********************03550040
+       NEW-PARA.                                                        03560040
+            IF CID OF INREC4 IS NOT = SPACES                            03570040
+               IF LOANTYPE OF INREC4 IS NOT = SPACES                    03580040
+                  IF LOANAMT OF INREC4 IS NOT = SPACES                  03590040
+                     MOVE CID OF INREC4 TO HV3-CID                      03600040
+                     EXEC SQL                                           03610040
+                        SELECT CID INTO :HV1-CID                        03620040
+                        FROM CUSTOMER                                   03630040
+                        WHERE CID = :HV3-CID                            03640040
+                     END-EXEC                                           03650040
+                     IF SQLCODE = 0                                     03660040
+                      PERFORM OPEN-NEW-PARA                             03670040
+                     ELSE                                               03680040
+                      MOVE "ID IS NOT PRESENT" TO REMARK OF OUTREC4     03690040
+                      PERFORM ERROR-PARA                                03700040
+                     END-IF                                             03710040
+                  ELSE                                                  03720040
+                     MOVE "LOANAMT GIVEN NOT VALID" TO REMARK OF OUTREC403730040
+                     PERFORM ERROR-PARA                                 03740040
+                  END-IF                                                03750040
+               ELSE                                                     03760040
+                  MOVE "LOATYPE GIVEN IS NOT VALID" TO REMARK OF OUTREC403770040
+                  PERFORM ERROR-PARA                                    03780040
+               END-IF                                                   03790040
+            ELSE                                                        03800040
+               MOVE "CID GIVEN IS NOT VALID" TO REMARK OF OUTREC4       03810040
+               PERFORM ERROR-PARA                                       03820040
+            END-IF.                                                     03830040
+      ********************OPENING A NEW LOAN PARA***********************03840040
+       OPEN-NEW-PARA.                                                   03850040
+            MOVE CID OF INREC4 TO HV3-CID                               03860040
+            MOVE LOANTYPE OF INREC4 TO HV3-TYPE                         03870040
+            MOVE 'O' TO HV3-STATUS                                      03880040
+             EXEC SQL                                                   03890040
+                  SELECT MAX(LNO) INTO :HV3-OUTAMT                      03900040
+                  FROM LOAN_TRANS                                       03910040
+             END-EXEC                                                   03920040
+             MOVE HV3-OUTAMT TO CNTR                                    03930040
+             DISPLAY CNTR                                               03940040
+             EXEC SQL                                                   03950040
+                  SELECT LNO INTO :HV3-OUTAMT                           03960040
+                  FROM LOAN_TRANS                                       03970040
+                  WHERE CID = :HV3-CID AND TYPE = :HV3-TYPE             03980040
+                       AND STATUS = :HV3-STATUS                         03990040
+             END-EXEC                                                   04000040
+             IF SQLCODE NOT = 0                                         04010040
+               EXEC SQL                                                 04020040
+                 SELECT COUNT(:HV3-CID) INTO :HV3-OUTAMT                04030040
+                 FROM LOAN_TRANS                                        04040040
+                 WHERE CID = :HV3-CID AND STATUS = :HV3-STATUS          04050040
+               END-EXEC                                                 04060040
+             DISPLAY HV3-OUTAMT                                         04070040
+             IF HV3-OUTAMT < 5                                          04080040
+                 DISPLAY HV3-TYPE                                       04090040
+             EXEC SQL                                                   04100040
+               SELECT ROI INTO :HV2-ROI                                 04110040
+               FROM LOAN3                                               04120040
+               WHERE TYPE = :HV3-TYPE                                   04130040
+             END-EXEC                                                   04140040
+             MOVE HV2-ROI TO RATE                                       04150040
+             DISPLAY HV2-ROI                                            04160040
+             EXEC SQL                                                   04170040
+               SELECT TERM INTO :HV2-TERM                               04180040
+               FROM LOAN3                                               04190040
+               WHERE TYPE = :HV3-TYPE                                   04200040
+             END-EXEC                                                   04210040
+             MOVE HV2-TERM TO TERM                                      04220040
+             IF LOANTYPE OF INREC4 = 'PL'                               04230040
+              IF LOANAMT OF INREC4  > 100000                            04240040
+                 MOVE "LOAN AMOUNT EXCEEDED" TO REMARK OF OUTREC4       04250040
+                 PERFORM ERROR-PARA                                     04260040
+                 MOVE 0 TO TEMP                                         04270040
+              ELSE                                                      04280040
+                 PERFORM CALC-PARA                                      04290040
+              END-IF                                                    04300040
+             END-IF                                                     04310040
+             IF LOANTYPE OF INREC4 = 'EL'                               04320040
+              IF LOANAMT OF INREC4 > 100000                             04330040
+                 MOVE "LOAN AMOUNT EXCEEDED" TO REMARK OF OUTREC4       04340040
+                 PERFORM ERROR-PARA                                     04350040
+                 MOVE 0 TO TEMP                                         04360040
+              ELSE                                                      04370040
+                 PERFORM CALC-PARA                                      04380040
+              END-IF                                                    04390040
+             END-IF                                                     04400040
+             IF LOANTYPE OF INREC4 = 'HL'                               04410040
+              IF LOANAMT OF INREC4 > 500000                             04420040
+                 MOVE "LOAN AMOUNT EXCEEDED" TO REMARK OF OUTREC4       04430040
+                 PERFORM ERROR-PARA                                     04440040
+                 MOVE 0 TO TEMP                                         04450040
+              ELSE                                                      04460040
+                 PERFORM CALC-PARA                                      04470040
+              END-IF                                                    04480040
+             END-IF                                                     04490040
+             IF LOANTYPE OF INREC4 = 'CL'                               04500040
+              IF LOANAMT OF INREC4 > 300000                             04510040
+                 MOVE "LOAN AMOUNT EXCEEDED" TO REMARK OF OUTREC4       04520040
+                 PERFORM ERROR-PARA                                     04530040
+                 MOVE 0 TO TEMP                                         04540040
+              ELSE                                                      04550040
+                 PERFORM CALC-PARA                                      04560040
+              END-IF                                                    04570040
+             END-IF                                                     04580040
+             IF LOANTYPE OF INREC4 = 'AL'                               04590040
+              IF LOANAMT OF INREC4 > 150000                             04600040
+                 MOVE "LOAN AMOUNT EXCEEDED" TO REMARK OF OUTREC4       04610040
+                 PERFORM ERROR-PARA                                     04620040
+                 MOVE 0 TO TEMP                                         04630040
+              ELSE                                                      04640040
+                 PERFORM CALC-PARA                                      04650040
+              END-IF                                                    04660040
+             END-IF                                                     04670040
+             EXEC SQL                                                   04680040
+              SELECT LID INTO :HV2-LID                                  04690040
+              FROM LOAN3                                                04700040
+              WHERE TYPE = :HV3-TYPE                                    04710040
+             END-EXEC                                                   04720040
+             MOVE HV2-LID TO HV3-LID                                    04730040
+             IF TEMP NOT = 0                                            04740040
+              MOVE 'O' TO HV3-STATUS                                    04750040
+              ADD 1 TO CNTR                                             04760040
+              MOVE CNTR TO HV3-LNO                                      04770040
+              DISPLAY CNTR                                              04780040
+              EXEC SQL                                                  04790040
+                INSERT INTO LOAN_TRANS (LNO,CID,LID,TYPE,STATUS,OUTAMT) 04800040
+                VALUES (:HV3-LNO,:HV3-CID,:HV3-LID,:HV3-TYPE,:HV3-STATUS04810040
+                        ,:HV3-OUTAMT)                                   04820040
+              END-EXEC                                                  04830040
+              IF SQLCODE = 0                                            04840040
+                 DISPLAY "INSERT SUCCESS"                               04850040
+              ELSE                                                      04860040
+                 DISPLAY SQLCA                                          04870040
+              END-IF                                                    04880040
+             END-IF                                                     04890040
+             ELSE                                                       04900040
+              PERFORM ERROR-PARA                                        04910040
+             END-IF                                                     04920040
+           ELSE                                                         04930040
+             MOVE "SAME LOAN TYPE ALREADY TAKEN" TO REMARK OF OUTREC4   04940040
+             PERFORM ERROR-PARA                                         04950040
+           END-IF.                                                      04960040
+      *********************CALCULATION OF OUTAMT************************04970040
+       CALC-PARA.                                                       04980040
+             COMPUTE TEMP = ( LOANAMT OF INREC4 )                       04990040
+                       + ( LOANAMT OF INREC4 * RATE * TERM ) / 100      05000040
+             DISPLAY TEMP                                               05010040
+             MOVE TEMP TO HV3-OUTAMT.                                   05020040
+      *********************REPAYMENT OF LOAN PARA***********************05030040
+       REPAY-PARA.                                                      05040040
+             IF CID OF INREC5 IS NOT = SPACES                           05050040
+                IF LOANTYPE OF INREC5 IS NOT = SPACES                   05060040
+                   IF LID OF INREC5 IS NOT = SPACES                     05070040
+                      IF LOANAMT OF INREC5 IS NOT = SPACES              05080040
+                        MOVE CID OF INREC5 TO HV1-CID                   05090040
+                        EXEC SQL                                        05100040
+                           SELECT CID INTO :HV1-CID                     05110040
+                           FROM CUSTOMER                                05120040
+                           WHERE CID = :HV1-CID                         05130040
+                        END-EXEC                                        05140040
+                      IF SQLCODE = 0                                    05150040
+                        MOVE CID OF INREC5 TO HV3-CID                   05160040
+                        MOVE LOANTYPE OF INREC5 TO HV3-TYPE             05170040
+                        MOVE LID OF INREC5 TO HV3-LID                   05180040
+                        EXEC SQL                                        05190040
+                         SELECT LNO,OUTAMT INTO :HV3-LNO,:HV3-OUTAMT    05200040
+                         FROM LOAN_TRANS                                05210040
+                         WHERE CID = :HV3-CID AND LID = :HV3-LID AND    05220040
+                                  TYPE = :HV3-TYPE                      05230040
+                        END-EXEC                                        05240040
+                        IF SQLCODE = 0                                  05250040
+                          DISPLAY "NO ERROR"                            05260040
+                        ELSE                                            05270040
+                          DISPLAY SQLCODE                               05280040
+                        END-IF                                          05290040
+                        DISPLAY HV3-OUTAMT                              05300040
+                        DISPLAY LOANAMT OF INREC5                       05310040
+                     IF (HV3-OUTAMT = LOANAMT OF INREC5)                05320040
+                        MOVE 'C' TO HV3-STATUS                          05330040
+                        MOVE 0 TO HV3-OUTAMT                            05340040
+                        EXEC SQL                                        05350040
+                          UPDATE LOAN_TRANS                             05360040
+                          SET OUTAMT = :HV3-OUTAMT,                     05370040
+                            STATUS = :HV3-STATUS                        05380040
+                          WHERE LNO = :HV3-LNO                          05390040
+                        END-EXEC                                        05400040
+                        EXEC SQL                                        05410040
+                          UPDATE LOAN_TRANS                             05420040
+                          SET CDATE = CURRENT_DATE + 1 DAY              05430040
+                          WHERE LNO = :HV3-LNO                          05440040
+                        END-EXEC                                        05450040
+                     ELSE                                               05460040
+                     IF (HV3-OUTAMT > LOANAMT OF INREC5)                05470040
+                      MOVE HV3-OUTAMT TO TOTAL                          05480040
+                      COMPUTE TOTAL = TOTAL - LOANAMT OF INREC5         05490040
+                      MOVE TOTAL TO HV3-OUTAMT                          05500040
+                      EXEC SQL                                          05510040
+                         UPDATE LOAN_TRANS                              05520040
+                            SET OUTAMT = :HV3-OUTAMT                    05530040
+                            WHERE LNO = :HV3-LNO                        05540040
+                      END-EXEC                                          05550040
+                      ELSE                                              05560040
+                      IF (HV3-OUTAMT < LOANAMT OF INREC5)               05570040
+                        MOVE "AMOUNT PAID IS MORE THAN TAKEN" TO REMARK 05580040
+                              OF OUTREC5                                05590040
+                        PERFORM ERROR-PARA                              05600040
+                       ELSE                                             05610040
+                         PERFORM ERROR-PARA                             05620040
+                       END-IF                                           05630040
+                     ELSE                                               05640040
+                       MOVE "CUSTOMER IS NOT PRESENT" TO REMARK OF      05650040
+                             OUTREC5                                    05660040
+                       PERFORM ERROR-PARA                               05670040
+                     END-IF                                             05680040
+                    ELSE                                                05690040
+                       MOVE "LOANAMT GIVEN NOT VALID" TO REMARK OF      05700040
+                             OUTREC5                                    05710040
+                       PERFORM ERROR-PARA                               05720040
+                    END-IF                                              05730040
+                  ELSE                                                  05740040
+                     MOVE "LOANID GIVEN IS NOT VALID" TO REMARK OF      05750040
+                             OUTREC5                                    05760040
+                     PERFORM ERROR-PARA                                 05770040
+                  END-IF                                                05780040
+                 ELSE                                                   05790040
+                   MOVE "LOANTYPE GIVEN IS NOT VALID" TO REMARK OF      05800040
+                              OUTREC5                                   05810040
+                  PERFORM ERROR-PARA                                    05820040
+                 END-IF                                                 05830040
+                ELSE                                                    05840040
+                   MOVE "CID GIVEN IS NOT VALID" TO REMARK OF OUTREC5   05850040
+                   PERFORM ERROR-PARA                                   05860040
+                END-IF.                                                 05870040

@@ -1,0 +1,158 @@
+      ******************************************************************00001030
+      ************THIS PROGRAM GENERATES OUTSTANDING LOAN REPORT********00002030
+      **THE INPUT FILE IS LOAN_TRANS TABLE AND OUTPUT FILE IS PS FILE***00004030
+      ******************************************************************00005030
+                                                                        00006030
+       IDENTIFICATION DIVISION.                                         00010000
+       PROGRAM-ID.   OUTFILE2.                                          00020030
+       AUTHOR.       TEAM7.                                             00021030
+       DATE-WRITTEN. 06-OCT-2019.                                       00022030
+       ENVIRONMENT    DIVISION.                                         00030030
+       INPUT-OUTPUT   SECTION.                                          00040030
+       FILE-CONTROL.                                                    00050000
+      **************OUTPUT FILE INFORMATION************************     00051030
+            SELECT RPTFILE ASSIGN TO DD2                                00060019
+            FILE STATUS IS FS2.                                         00070000
+       DATA DIVISION.                                                   00080000
+       FILE SECTION.                                                    00090000
+      **************OUTPUT FILE DESCRIPTION**********************       00091030
+       FD RPTFILE.                                                      00100000
+       01 RPTREC.                                                       00110000
+          05 TYPE1                  PIC X(2).                           00120000
+          05                        PIC X(14) VALUE SPACES.             00130033
+          05 CID1                   PIC X(5).                           00140000
+          05                        PIC X(14) VALUE SPACES.             00150033
+          05 LID1                   PIC 9(5).                           00160000
+          05                        PIC X(10) VALUE SPACES.             00161033
+          05 ODATE1                 PIC 99/99/9999.                     00162000
+          05                        PIC X(5) VALUE SPACES.              00163033
+          05 OUTAMT1                PIC 9(7).                           00164000
+          05                        PIC X(8) VALUE SPACES.              00165033
+      ****************************************************************  00165130
+       WORKING-STORAGE SECTION.                                         00166000
+      ***************INCLUDING LOAN TRANSACTION TABLE****************** 00166130
+                     EXEC SQL                                           00167000
+                        INCLUDE TRANS                                   00168018
+                     END-EXEC                                           00169000
+      ***************************************************************** 00169130
+      ***************INCLUDING SQL COMMUNICATION AREA****************** 00169230
+                     EXEC SQL                                           00170000
+                        INCLUDE SQLCA                                   00180000
+                     END-EXEC                                           00190000
+      ***************************************************************** 00191030
+      ***************DECLARATION OF CURSOR******************            00192030
+                     EXEC SQL                                           00200000
+                        DECLARE LOANCURS CURSOR FOR                     00210000
+                        SELECT TYPE,CID,LID,ODATE,OUTAMT                00211000
+                        FROM LOAN_TRANS                                 00212018
+                        ORDER BY TYPE,CID                               00212120
+                     END-EXEC.                                          00213000
+      ***************************************************************** 00213130
+      *****************VARIABLE DECLARATION FOR HEADING**************** 00213230
+       01 CNAME      PIC X(80)   VALUE "LOAN-CATEGORY   CUSTOMER-NUMBER 00214000
+      -                 " LOAN-NUMBER   DATE-OF-OPENING   AMOUNT ".     00215000
+       01 DATE1.                                                        00216000
+          05 YEAR                   PIC 99.                             00217000
+          05 MONTH                  PIC 99.                             00218000
+          05 D1                     PIC 99.                             00219000
+       01 DATE2.                                                        00220000
+          05 BN                     PIC X(12)    VALUE "INDOBANK LTD".  00230000
+          05                        PIC X(43)    VALUE SPACES.          00231034
+          05 DT                     PIC X(5)     VALUE "DATE:".         00232000
+          05 YEAR1                  PIC 99.                             00233000
+          05 V1                     PIC X        VALUE "/".             00234000
+          05 MONTH1                 PIC 99.                             00235000
+          05 V2                     PIC X        VALUE "/".             00236000
+          05 D2                     PIC 99.                             00237000
+       01 PAGE1.                                                        00238000
+          05                        PIC X(52)    VALUE SPACES.          00239034
+          05 PG                     PIC X(10)    VALUE "PAGE-NO:".      00240000
+          05 PNO                    PIC 99       VALUE 1.               00250000
+       01 BREAK.                                                        00251022
+          05                        PIC X(80)    VALUE SPACES.          00252024
+       01 TITLE1.                                                       00260000
+          05                        PIC X(25)    VALUE SPACES.          00270035
+          05 TITLE2  PIC X(30)   VALUE "OUTSTANDING LOAN REPORT".       00270100
+      ***************************************************************** 00270230
+       01 TOTAL.                                                        00270300
+          05                        PIC X(40)    VALUE "OUTSTANDING AMOU00270400
+      -                     "NT GRAND TOTAL:".                          00270500
+          05 WS-GRAND-TOT              PIC Z(7)9.                       00270612
+       01 GRAND-TOT              PIC 9(08) VALUE 0.                     00270712
+       01 DA.                                                           00270812
+          05 DD                     PIC 99.                             00270912
+          05                        PIC X        VALUE "/".             00271012
+          05 MM                     PIC 99.                             00271112
+          05 PIC X        VALUE "/".                                    00271212
+          05 YYYY PIC 9999.                                             00272000
+       77 FS2                       PIC 99.                             00273000
+       77 CNTR                      PIC 99       VALUE 0.               00273100
+      ***************************************************************** 00273230
+       PROCEDURE DIVISION.                                              00274000
+       MAIN-PARA.                                                       00275000
+               PERFORM OPEN-PARA                                        00276000
+               PERFORM WRITE-PARA                                       00277000
+               PERFORM FETCH-PARA UNTIL SQLCODE NOT = 0                 00278000
+               EXEC SQL                                                 00280000
+                 CLOSE LOANCURS                                         00290000
+               END-EXEC                                                 00300000
+               CLOSE   RPTFILE                                          00310000
+               STOP RUN.                                                00320000
+      ****************************************************************  00321030
+       OPEN-PARA.                                                       00330000
+               OPEN OUTPUT RPTFILE                                      00340000
+               DISPLAY "OPEN STATUS" FS2                                00350000
+               EXEC SQL                                                 00360000
+                  OPEN LOANCURS                                         00360100
+               END-EXEC.                                                00360200
+      *****************PARA TO DISPLAY HEADING************************  00360330
+       WRITE-PARA.                                                      00360400
+               ACCEPT  DATE1  FROM DATE                                 00360500
+               PERFORM REVERSE-PARA                                     00360600
+               WRITE RPTREC   FROM DATE2                                00360700
+               WRITE RPTREC   FROM PAGE1                                00360800
+               WRITE RPTREC   FROM BREAK                                00360924
+               WRITE RPTREC   FROM TITLE1                               00361000
+               WRITE RPTREC   FROM BREAK                                00361122
+               WRITE RPTREC   FROM CNAME                                00361200
+               WRITE RPTREC   FROM BREAK                                00361324
+               ADD 1  TO PNO                                            00361430
+               MOVE 0 TO CNTR.                                          00361500
+      ***************************************************************** 00361630
+       FETCH-PARA.                                                      00361700
+               EXEC SQL                                                 00362000
+                 FETCH LOANCURS INTO :HV3-TYPE, :HV3-CID,               00362118
+                       :HV3-LID, :HV3-ODATE, :HV3-OUTAMT                00362218
+               END-EXEC                                                 00362400
+               IF SQLCODE = 0                                           00362538
+                 PERFORM WRITE1-PARA                                    00362600
+               ELSE                                                     00362700
+                 DISPLAY "SQLCODE" SQLCODE                              00362800
+                 MOVE ZEROS     TO CNTR                                 00362930
+                 MOVE GRAND-TOT TO WS-GRAND-TOT                         00363014
+                 WRITE RPTREC   FROM TOTAL                              00363114
+               END-IF.                                                  00363214
+      ***************PARA FOR WRITING REPORT CONTENTS*****************  00363330
+       WRITE1-PARA.                                                     00363414
+               MOVE HV3-TYPE       TO TYPE1                             00363518
+               MOVE HV3-CID        TO CID1                              00364018
+               MOVE HV3-LID        TO LID1                              00365018
+               MOVE HV3-ODATE(9:2) TO DD                                00366018
+               MOVE HV3-ODATE(6:2) TO MM                                00367018
+               MOVE HV3-ODATE(1:4) TO YYYY                              00368018
+               MOVE DA             TO ODATE1                            00369030
+               MOVE HV3-OUTAMT     TO OUTAMT1                           00369118
+               ADD  OUTAMT1        TO GRAND-TOT                         00369230
+               WRITE RPTREC                                             00369300
+               ADD 1 TO CNTR                                            00369401
+               IF CNTR > 2                                              00369532
+                 PERFORM WRITE-PARA                                     00369600
+               END-IF                                                   00369700
+               IF FS2 NOT = 0                                           00369800
+                 DISPLAY "WRITE FAILED"                                 00369900
+               END-IF.                                                  00370000
+      ***************************************************************** 00370130
+       REVERSE-PARA.                                                    00370200
+               MOVE YEAR          TO D2                                 00370303
+               MOVE D1            TO YEAR1                              00371003
+               MOVE MONTH         TO MONTH1.                            00380003
